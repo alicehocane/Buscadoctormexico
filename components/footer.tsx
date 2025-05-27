@@ -85,7 +85,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-6 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Busca Doctor México. Todos los derechos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} Busca Doctor México.</p>
         </div>
       </div>
     </footer>
