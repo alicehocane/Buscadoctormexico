@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 
 /**
- * Sitemap index referencing static and doctors sitemaps.
+ * Sitemap index referencing static and doctors sitemap.
  */
 export async function GET() {
   const baseUrl = 'https://doctor-01.vercel.app';
