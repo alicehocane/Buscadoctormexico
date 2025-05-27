@@ -11,6 +11,8 @@ export async function GET() {
     { loc: `${baseUrl}/`, changefreq: 'daily', priority: 1.0 },
     { loc: `${baseUrl}/about`, changefreq: 'monthly', priority: 0.7 },
     { loc: `${baseUrl}/contact`, changefreq: 'monthly', priority: 0.7 },
+    { loc: `${baseUrl}/terms`, changefreq: 'monthly', priority: 0.7 },
+    { loc: `${baseUrl}/privacy`, changefreq: 'monthly', priority: 0.7 },
   ];
 
   const urlset = urls
