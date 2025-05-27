@@ -13,7 +13,7 @@ export async function GET(
   _: Request,
   { params }: { params: { page: string } }
 ) {
-  const baseUrl = 'https://doctor-01.vercel.app';
+  const baseUrl = 'https://buscadoctormexico.mx';
   const pageSize = 500;
   const pageNum = parseInt(params.page, 10);
   const now = new Date().toISOString();

@@ -8,7 +8,7 @@ export const revalidate = 108000; // 7 days
  * Generates a sitemap index of paginated doctor sitemaps.
  */
 export async function GET() {
-  const baseUrl = 'https://doctor-01.vercel.app';
+  const baseUrl = 'https://buscadoctormexico.mx';
   const now = new Date().toISOString();
   let totalDocs = 0;
 

@@ -139,8 +139,8 @@ export default function TermsOfServicePage() {
             <div className="space-y-2">
               <p>
                 <span className="font-medium">Correo electrónico:</span>{" "}
-                <a href="mailto:legal@directoriodemedicos.mx" className="text-primary hover:underline">
-                  legal@directoriodemedicos.mx
+                <a href="mailto:Contacto@buscadoctormexico.com" className="text-primary hover:underline">
+                  Contacto@buscadoctormexico.com
                 </a>
               </p>
             </div>

@@ -76,8 +76,8 @@ export default function ContactPage() {
               <div className="space-y-2">
                 <h3 className="font-medium">Correo Electrónico</h3>
                 <p className="text-muted-foreground">
-                  <a href="mailto:contacto@directoriodemedicos.mx" className="text-primary hover:underline">
-                    contacto@directoriodemedicos.mx
+                  <a href="mailto:Contacto@buscadoctormexico.com" className="text-primary hover:underline">
+                    Contacto@buscadoctormexico.com
                   </a>
                 </p>
               </div>
