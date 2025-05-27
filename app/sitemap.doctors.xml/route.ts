@@ -5,7 +5,7 @@ export const dynamic = 'auto';
 export const revalidate = 108000; // 7 days
 
 /**
- * Generates a sitemap index of paginated doctor sitemaps.
+ * Generates a sitemap index of paginated doctor sitemaps
  */
 export async function GET() {
   const baseUrl = 'https://buscadoctormexico.mx';
