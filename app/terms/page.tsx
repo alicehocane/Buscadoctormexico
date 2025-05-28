@@ -28,7 +28,7 @@ export default function TermsOfServicePage() {
             <CardTitle>Introducción</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p>Última actualización: 7 de mayo de 2025</p>
+            <p>Última actualización: 28 de mayo de 2025</p>
             <p>
               Estos términos y condiciones describen las reglas y regulaciones para el uso del sitio web del Directorio
               de Médicos.

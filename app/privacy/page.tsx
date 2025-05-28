@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
             <CardTitle>Introducción</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p>Última actualización: 22 de mayo de 2025</p>
+            <p>Última actualización: 28 de mayo de 2025</p>
             <p>
               En Busca Doctor México, respetamos su privacidad y nos comprometemos a proteger sus datos personales.
               Esta política de privacidad le informará sobre cómo cuidamos sus datos personales cuando visita nuestro
