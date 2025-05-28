@@ -22,7 +22,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
         <head>
         <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="128x128" href="/buscadoctormexico_favicon_128.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/buscadoctormexico_favicon_180.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/buscadoctormexico_favicon_32.png" />
       </head>
       <body className={inter.className}>
