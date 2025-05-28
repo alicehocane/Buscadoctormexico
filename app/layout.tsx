@@ -21,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
         <head>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" src="/buscadoctormexico_favicon_16.png" />
+        <link rel="apple-touch-icon" sizes="128x128" src="/buscadoctormexico_favicon_128.png" />
+        <link rel="icon" type="image/png" sizes="32x32" src="/buscadoctormexico_favicon_32.png" />
       </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
