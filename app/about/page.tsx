@@ -84,8 +84,8 @@ export default function AboutPage() {
             <div className="space-y-2">
               <p>
                 <span className="font-medium">Correo electrónico:</span>{" "}
-                <a href="mailto:Contacto@buscadoctormexico.com" className="text-primary hover:underline">
-                  contacto@directoriodemedicos.mx
+                <a href="mailto:contacto@buscadoctormexico.com" className="text-primary hover:underline">
+                  contacto@buscadoctormexico.com
                 </a>
               </p>
               {/* <p>
