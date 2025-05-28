@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
  * Static routes sitemap.
  */
 export async function GET() {
-  const baseUrl = 'https://doctor-01.vercel.app';
+  const baseUrl = 'https://buscadoctormexico.mx';
   const now = new Date().toISOString();
 
   const urls = [

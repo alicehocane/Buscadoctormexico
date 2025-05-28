@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
  * Sitemap index referencing static and doctors sitemap.
  */
 export async function GET() {
-  const baseUrl = 'https://doctor-01.vercel.app';
+  const baseUrl = 'https://buscadoctormexico.mx';
   const staticSitemap = `${baseUrl}/sitemap.static.xml`;
   const doctorsSitemap = `${baseUrl}/sitemap.doctors.xml`;
 
