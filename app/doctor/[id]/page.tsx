@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: DoctorPageProps): Promise<Met
   const specialty = "Cardiólogo"
 
   return {
-    title: `${doctorName} - ${specialty} | Busca Doctor México`,
+    title: `Perfil de Médico | Busca Doctor México`,
     description: `Información de contacto y perfil profesional de ${doctorName}, ${specialty} en México.`,
   }
 }
