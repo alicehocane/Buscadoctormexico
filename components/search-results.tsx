@@ -1,7 +1,7 @@
+// components/search-results.tsx
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
 import DoctorCard from "@/components/doctor-card"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -10,88 +10,86 @@ import {
   query,
   where,
   getDocs,
-  limit,
-  startAfter,
-  orderBy,
   type DocumentData,
-  type QueryDocumentSnapshot,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import SearchResultsSkeleton from "@/components/search-results-skeleton"
 
 interface SearchResultsProps {
-  tipo: string
+  tipo: "ciudad" | "especialidad" | "padecimiento"
   valor: string
+  ciudad?: string
 }
 
-// Cache object outside the component
-let doctorsCache: {
-  [key: string]: {
-    doctors: DocumentData[]
-    totalDoctors: number
-    timestamp: number
-  }
-} = {}
-const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000 // 1 week in milliseconds
+let doctorsCache: Record<
+  string,
+  { doctors: DocumentData[]; totalDoctors: number; timestamp: number }
+> = {}
 
+const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000 // 1 week
+const ITEMS_PER_PAGE = 15
 
-export default function SearchResults({ tipo, valor }: SearchResultsProps) {
-  const router = useRouter()
+export default function SearchResults({
+  tipo,
+  valor,
+  ciudad,
+}: SearchResultsProps) {
   const [doctors, setDoctors] = useState<DocumentData[]>([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalDoctors, setTotalDoctors] = useState(0)
-  const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot | null>(null)
-  const itemsPerPage = 15
 
-  // Create a unique cache key based on search parameters and page
-  const getCacheKey = useCallback(() => {
-    return `${tipo}-${valor}-${currentPage}`
-  }, [tipo, valor, currentPage])
+  const getCacheKey = useCallback(
+    () => `${tipo}-${valor}-${ciudad ?? ""}-${currentPage}`,
+    [tipo, valor, ciudad, currentPage]
+  )
 
-  // Enhanced priority scoring function
-  const calculatePriorityScore = useCallback((doctor: DocumentData) => {
-    let score = 0;
-    
-    // Highest priority: has diseases treated (regardless of match)
-    if (doctor.diseasesTreated?.length > 0) {
-      score += 100; // Base score for having any diseases treated
-      
-      // Additional points for matching diseases
-      if (doctor.diseasesTreated.some((d: string) => 
-        d.toLowerCase().includes(valor.toLowerCase()))) {
-        score += 50; // Extra points for matching diseases
+  const calculatePriorityScore = useCallback(
+    (doc: DocumentData) => {
+      let score = 0
+      if (Array.isArray(doc.diseasesTreated) && doc.diseasesTreated.length > 0) {
+        score += 100
+        if (
+          doc.diseasesTreated.some((d: string) =>
+            d.toLowerCase().includes(valor.toLowerCase())
+          )
+        ) {
+          score += 50
+        }
       }
-    }
-    
-    // Specialty matches
-    if (doctor.specialties?.some((s: string) => 
-      s.toLowerCase().includes(valor.toLowerCase()))) {
-      score += 30;
-    }
-    
-    // City matches
-    if (doctor.cities?.some((c: string) => 
-      c.toLowerCase().includes(valor.toLowerCase()))) {
-      score += 20;
-    }
-    
-    // Phone number matches
-    if (doctor.phoneNumbers?.some((p: string) => p.includes(valor))) {
-      score += 10;
-    }
-    
-    return score;
-  }, [valor]);
+      if (
+        Array.isArray(doc.specialties) &&
+        doc.specialties.some((s: string) =>
+          s.toLowerCase().includes(valor.toLowerCase())
+        )
+      ) {
+        score += 30
+      }
+      if (
+        Array.isArray(doc.cities) &&
+        doc.cities.some((c: string) =>
+          c.toLowerCase().includes(valor.toLowerCase())
+        )
+      ) {
+        score += 20
+      }
+      if (
+        Array.isArray(doc.phoneNumbers) &&
+        doc.phoneNumbers.some((p: string) => p.includes(valor))
+      ) {
+        score += 10
+      }
+      return score
+    },
+    [valor]
+  )
 
   const fetchDoctors = useCallback(async () => {
     const cacheKey = getCacheKey()
-    const cachedData = doctorsCache[cacheKey]
-
-    // Return cached data if it exists and is fresh
-    if (cachedData && Date.now() - cachedData.timestamp < CACHE_DURATION) {
-      setDoctors(cachedData.doctors)
-      setTotalDoctors(cachedData.totalDoctors)
+    const cached = doctorsCache[cacheKey]
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      setDoctors(cached.doctors)
+      setTotalDoctors(cached.totalDoctors)
       setLoading(false)
       return
     }
@@ -99,159 +97,104 @@ export default function SearchResults({ tipo, valor }: SearchResultsProps) {
     setLoading(true)
     try {
       const doctorsRef = collection(db, "doctors")
-      let q
 
-      // Create base query based on search type
+      // 1) Firestore query with only one array-contains
+      let baseQuery
       if (tipo === "ciudad") {
-        q = query(doctorsRef, where("cities", "array-contains", valor))
+        baseQuery = query(doctorsRef, where("cities", "array-contains", valor))
       } else if (tipo === "especialidad") {
-        q = query(doctorsRef, where("specialties", "array-contains", valor))
-      } else if (tipo === "padecimiento") {
-        q = query(doctorsRef, where("diseasesTreated", "array-contains", valor))
+        baseQuery = query(
+          doctorsRef,
+          where("specialties", "array-contains", valor)
+        )
       } else {
-        // General search across multiple fields
-        q = query(doctorsRef)
+        baseQuery = query(
+          doctorsRef,
+          where("diseasesTreated", "array-contains", valor)
+        )
       }
 
-      const querySnapshot = await getDocs(q)
-      setTotalDoctors(querySnapshot.size)
+      const snap = await getDocs(baseQuery)
 
-      // Process and sort doctors
-      const allDoctors = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        priorityScore: calculatePriorityScore(doc.data())
-      }))
-
-      // Sort by priority score (descending), then by name
-      const sortedDoctors = allDoctors.sort((a, b) => {
-        // First by priority score (higher first)
-        if (b.priorityScore !== a.priorityScore) {
-          return b.priorityScore - a.priorityScore
+      // 2) Map docs & compute score
+      let docsWithScore = snap.docs.map((d) => {
+        const data = d.data()
+        return {
+          id: d.id,
+          ...data,
+          priorityScore: calculatePriorityScore(data),
         }
-        // Then by name (alphabetical)
-        return a.fullName?.localeCompare(b.fullName || '')
       })
 
-      // Apply pagination
-      const startIdx = (currentPage - 1) * itemsPerPage
-      const paginatedDoctors = sortedDoctors.slice(startIdx, startIdx + itemsPerPage)
+      // 3) Filter by ciudad client-side if needed
+      if (ciudad && tipo !== "ciudad") {
+        docsWithScore = docsWithScore.filter((doc) =>
+          Array.isArray(doc.cities) && doc.cities.includes(ciudad)
+        )
+      }
 
-      // Update cache
+      // 4) Sort by score, then fullName
+      docsWithScore.sort((a, b) =>
+        b.priorityScore - a.priorityScore ||
+        (a.fullName || "").localeCompare(b.fullName || "")
+      )
+
+      // 5) Paginate
+      const total = docsWithScore.length
+      setTotalDoctors(total)
+      const start = (currentPage - 1) * ITEMS_PER_PAGE
+      const pageDocs = docsWithScore.slice(start, start + ITEMS_PER_PAGE)
+
+      // 6) Cache & set state
       doctorsCache[cacheKey] = {
-        doctors: paginatedDoctors,
-        totalDoctors: querySnapshot.size,
-        timestamp: Date.now()
+        doctors: pageDocs,
+        totalDoctors: total,
+        timestamp: Date.now(),
       }
-
-      setDoctors(paginatedDoctors)
-      
-      // Update last visible for pagination
-      if (querySnapshot.docs.length > startIdx + itemsPerPage) {
-        setLastVisible(querySnapshot.docs[startIdx + itemsPerPage - 1])
-      } else {
-        setLastVisible(null)
-      }
-
-    } catch (error) {
-      console.error("Error fetching doctors:", error)
-      // Fallback to mock data
-      const mockDoctors = getMockDoctors(tipo, valor)
-      setDoctors(mockDoctors)
-      setTotalDoctors(mockDoctors.length)
+      setDoctors(pageDocs)
+    } catch (err) {
+      console.error("Error fetching doctors:", err)
+      setDoctors([])
+      setTotalDoctors(0)
     } finally {
       setLoading(false)
     }
-  }, [tipo, valor, currentPage, calculatePriorityScore, getCacheKey])
+  }, [tipo, valor, ciudad, currentPage, calculatePriorityScore, getCacheKey])
 
-  // 1) Reset to first page whenever the search changes
   useEffect(() => {
-    setCurrentPage(1)
-    // (optionally) clear out lastVisible if you’re using Firestore cursors:
-    setLastVisible(null)
-  }, [tipo, valor])
+  setCurrentPage(1)
+}, [tipo, valor])
 
-  // 2) Fetch doctors whenever tipo, valor, or currentPage change
-  useEffect(() => {
-    fetchDoctors()
-  }, [fetchDoctors])
-
-  // Helper function for mock data
-  const getMockDoctors = (searchType: string, searchValue: string) => {
-    const allMockDoctors = [
-      {
-        id: "WDONFz7u8gQm5Sslxd43",
-        fullName: "Dr. Luis Felipe Aguilar Aguilar",
-        licenseNumber: "12278122 9821017",
-        specialties: ["Cardiólogo", "Angiólogo"],
-        focusedon: ["Hemodinamia", "Cardiólogo Intervencionista", "Cardiología clínica"],
-        diseasesTreated: ["Arritmias", "Hipertensión", "Insuficiencia cardíaca"],
-        cities: ["Monterrey", "Guadalajara"],
-        addresses: ["Centro Médico Hidalgo - Consultorio 205, Miguel Hidalgo y Costilla 2425, Monterrey"],
-        phoneNumbers: ["8117331493", "8140589516"],
-      },
-      {
-        id: "XYZ123456789",
-        fullName: "Dra. María González Rodríguez",
-        specialties: ["Pediatra", "Neonatólogo"],
-        focusedon: ["Pediatría general", "Desarrollo infantil"],
-        diseasesTreated: ["Asma infantil", "Alergias", "Infecciones respiratorias"],
-        cities: ["Ciudad de México", "Puebla"],
-        addresses: ["Hospital Ángeles - Consultorio 302, Av. Reforma 1234, Ciudad de México"],
-        phoneNumbers: ["5512345678", "5598765432"],
-      },
-      {
-        id: "NO_DISEASES_123",
-        fullName: "Dr. Juan Pérez",
-        specialties: ["Dermatólogo"],
-        focusedon: ["Dermatología cosmética"],
-        diseasesTreated: [], // No diseases treated
-        cities: ["Monterrey"],
-        addresses: ["Consultorio particular - Av. San Pedro 123"],
-        phoneNumbers: ["8187654321"],
-      }
-    ]
-
-    // Filter mock data based on search type and value
-    return allMockDoctors.filter(doctor => {
-      if (!searchType) return true
-      
-      const searchValLower = searchValue.toLowerCase()
-      
-      if (searchType === "ciudad") {
-        return doctor.cities?.some(c => c.toLowerCase().includes(searchValLower))
-      } else if (searchType === "especialidad") {
-        return doctor.specialties?.some(s => s.toLowerCase().includes(searchValLower))
-      } else if (searchType === "padecimiento") {
-        return doctor.diseasesTreated?.some(d => d.toLowerCase().includes(searchValLower))
-      }
-      return true
-    })
-  }
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-  }
+useEffect(() => {
+  fetchDoctors()
+}, [fetchDoctors])
 
   if (loading) {
     return <SearchResultsSkeleton />
   }
 
-  if (doctors.length === 0) {
+  if (!doctors.length) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No se encontraron médicos que coincidan con tu búsqueda.</p>
+        <p className="text-muted-foreground">
+          No se encontraron médicos que coincidan con tu búsqueda.
+        </p>
       </div>
     )
   }
 
-  const totalPages = Math.ceil(totalDoctors / itemsPerPage)
+  const totalPages = Math.ceil(totalDoctors / ITEMS_PER_PAGE)
 
   return (
     <div>
       <div className="space-y-4">
-        {doctors.map((doctor) => (
-          <DoctorCard key={doctor.id} doctor={doctor} searchType={tipo} searchValue={valor} />
+        {doctors.map((doc) => (
+          <DoctorCard
+            key={doc.id}
+            doctor={doc}
+            searchType={tipo}
+            searchValue={valor}
+          />
         ))}
       </div>
 
@@ -260,20 +203,18 @@ export default function SearchResults({ tipo, valor }: SearchResultsProps) {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => handlePageChange(currentPage - 1)}
+            onClick={() => setCurrentPage((p) => p - 1)}
             disabled={currentPage === 1}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-
           <span className="text-sm">
             Página {currentPage} de {totalPages}
           </span>
-
           <Button
             variant="outline"
             size="icon"
-            onClick={() => handlePageChange(currentPage + 1)}
+            onClick={() => setCurrentPage((p) => p + 1)}
             disabled={currentPage === totalPages}
           >
             <ChevronRight className="h-4 w-4" />
