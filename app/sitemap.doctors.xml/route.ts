@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { firestore } from '../../lib/firebase-admin';
 
-export const dynamic = 'auto';
+export const dynamic = 'force-dynamic';
 export const revalidate = 108000; // 30 hours
 
 /**
