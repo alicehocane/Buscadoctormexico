@@ -38,6 +38,7 @@ export default function RootLayout({
             gtag('config', 'G-43ZLD2HGVW');
           `}
         </Script>
+      <meta name="google-site-verification" content="QNN0jVEy13PIPzRHgRW04pKECn2HvVJxkR6eAJAfiqg" />
       </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
